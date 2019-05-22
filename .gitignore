@@ -1,4 +1,3 @@
-
 # Created by https://www.gitignore.io/api/linux,macos,csharp,windows,visualstudio,visualstudiocode
 # Edit at https://www.gitignore.io/?templates=linux,macos,csharp,windows,visualstudio,visualstudiocode
 
@@ -582,3 +581,5 @@ $RECYCLE.BIN/
 # Backup folder for Package Reference Convert tool in Visual Studio 2017
 
 # End of https://www.gitignore.io/api/linux,macos,csharp,windows,visualstudio,visualstudiocode
+
+!min/Debug
