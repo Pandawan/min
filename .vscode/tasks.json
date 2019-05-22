@@ -2,12 +2,12 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build",
+            "label": "build min",
             "command": "dotnet",
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/min.csproj"
+                "${workspaceFolder}/min/min.csproj"
             ],
             "problemMatcher": "$tsc"
         },
@@ -17,7 +17,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/min.csproj"
+                "${workspaceFolder}/min/min.csproj"
             ],
             "problemMatcher": "$tsc"
         },
@@ -28,9 +28,19 @@
             "args": [
                 "watch",
                 "run",
-                "${workspaceFolder}/min.csproj"
+                "${workspaceFolder}/min/min.csproj"
             ],
             "problemMatcher": "$tsc"
-        }
+        },
+        {
+            "label": "build tools",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/tools/tools.csproj"
+            ],
+            "problemMatcher": "$tsc"
+        },
     ]
 }
