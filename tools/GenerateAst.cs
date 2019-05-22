@@ -9,6 +9,7 @@ namespace tools
     /// </summary>
     public class GenerateAst
     {
+        // Simply call "dotnet run -p tools ./min" from the root of the solution
         public static void Main(string[] args)
         {
             if (args.Length != 1)
@@ -19,11 +20,11 @@ namespace tools
 
             string outputDir = args[0];
 
-            DefineAst(outputDir, "Expression", new List<string>() {
-                "Binary   : Expression left, Token @operator, Expression right",
-                "Grouping : Expression expression",
+            DefineAst(outputDir, "Expressions", new List<string>() {
+                "Binary   : IExpression left, Token op, IExpression right",
+                "Grouping : IExpression expression",
                 "Literal  : object value",
-                "Unary    : Token @operator, Expression right"
+                "Unary    : Token op, IExpression right"
             });
         }
 
@@ -32,13 +33,15 @@ namespace tools
         {
             using (StreamWriter outputFile = new StreamWriter(Path.Combine(outputDir, $"{baseName}.cs")))
             {
-                outputFile.WriteLine("namespace min {");
+                outputFile.WriteLine("namespace min");
+                outputFile.WriteLine("{");
 
-                outputFile.WriteLine("public abstract class Expression");
+                outputFile.WriteLine("public interface IExpression");
                 outputFile.WriteLine("{");
 
                 // Add a base accept method
-                outputFile.WriteLine("public abstract T Accept<T>(IVisitor<T> visitor);");
+                outputFile.WriteLine("T Accept<T>(IVisitor<T> visitor);");
+                outputFile.WriteLine("}");
                 outputFile.WriteLine();
 
                 DefineVisitor(outputFile, baseName, types);
@@ -51,8 +54,6 @@ namespace tools
                 }
 
                 outputFile.WriteLine("}");
-
-                outputFile.WriteLine("}");
             }
         }
 
@@ -60,7 +61,7 @@ namespace tools
         private static void DefineType(StreamWriter outputFile, string baseName, string className, string fields)
         {
             outputFile.WriteLine();
-            outputFile.WriteLine($"public class {className} : Expression");
+            outputFile.WriteLine($"public struct {className} : IExpression");
             outputFile.WriteLine("{");
 
             string[] fieldList = fields.Split(", ");
@@ -87,7 +88,7 @@ namespace tools
 
             // Visitor pattern
             outputFile.WriteLine();
-            outputFile.WriteLine("public override T Accept<T>(IVisitor<T> visitor)");
+            outputFile.WriteLine("public T Accept<T>(IVisitor<T> visitor)");
             outputFile.WriteLine("{");
             outputFile.WriteLine($"return visitor.Visit{className}(this);");
             outputFile.WriteLine("}");
