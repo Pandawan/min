@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Collections.Generic;
+using min.Expressions;
 
 namespace min
 {
@@ -70,13 +71,19 @@ namespace min
         /// <param name="source">The source code to run.</param>
         private static void Run(string source)
         {
+            // Scanner/Lexer, read tokens
             Scanner scanner = new Scanner(source);
             List<Token> tokens = scanner.ScanTokens();
 
-            foreach (Token token in tokens)
-            {
-                Console.WriteLine(token);
-            }
+            // Parser, group tokens into expressions
+            Parser parser = new Parser(tokens);
+            IExpression expression = parser.Parse();
+
+            // Stop if there was a syntax error.
+            if (hadError) return;
+
+            // Temporary debug AstPrinter
+            Console.WriteLine(new Debug.AstPrinter().Print(expression));
         }
 
         /// <summary>
@@ -94,14 +101,42 @@ namespace min
         #endregion
 
         /// <summary>
-        /// Report an error.
+        /// Report a simple error.
         /// </summary>
         /// <param name="line">The line at which the program had an error.</param>
         /// <param name="message">The message explaining the error.</param>
         public static void Error(int line, string message)
         {
             // TODO: Add better error reporting with ^----- here or other reporting
-            Console.WriteLine($"[line {line}] Error: {message}");
+            Report(line, "", message);
+        }
+
+        /// <summary>
+        /// Report a token (parsing) error.
+        /// </summary>
+        /// <param name="token">The token at which the program had an error.</param>
+        /// <param name="message">The message explaining the error.</param>
+        public static void Error(Token token, string message)
+        {
+            if (token.type == TokenType.EOF)
+            {
+                Report(token.line, " at end", message);
+            }
+            else
+            {
+                Report(token.line, $" at '{token.lexeme}'", message);
+            }
+        }
+
+        /// <summary>
+        /// Actually reports an error through the console.
+        /// </summary>
+        /// <param name="line">The line at which the program had an error.</param>
+        /// <param name="where">Where in the line the program had an error</param>
+        /// <param name="message"></param>
+        public static void Report(int line, string where, string message)
+        {
+            Console.WriteLine($"[line {line}] Error{where}: {message}");
             hadError = true;
         }
     }

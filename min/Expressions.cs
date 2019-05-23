@@ -1,4 +1,4 @@
-namespace min
+namespace min.Expressions
 {
     public interface IExpression
     {
@@ -7,18 +7,18 @@ namespace min
 
     public interface IVisitor<T>
     {
-        T VisitBinary(Binary expressions);
-        T VisitGrouping(Grouping expressions);
-        T VisitLiteral(Literal expressions);
-        T VisitUnary(Unary expressions);
+        T VisitBinaryExpression(BinaryExpression expressions);
+        T VisitGroupingExpression(GroupingExpression expressions);
+        T VisitLiteralExpression(LiteralExpression expressions);
+        T VisitUnaryExpression(UnaryExpression expressions);
     }
 
-    public struct Binary : IExpression
+    public struct BinaryExpression : IExpression
     {
         public readonly IExpression left;
         public readonly Token op;
         public readonly IExpression right;
-        public Binary(IExpression left, Token op, IExpression right)
+        public BinaryExpression(IExpression left, Token op, IExpression right)
         {
             this.left = left;
             this.op = op;
@@ -27,43 +27,43 @@ namespace min
 
         public T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.VisitBinary(this);
+            return visitor.VisitBinaryExpression(this);
         }
     }
 
-    public struct Grouping : IExpression
+    public struct GroupingExpression : IExpression
     {
         public readonly IExpression expression;
-        public Grouping(IExpression expression)
+        public GroupingExpression(IExpression expression)
         {
             this.expression = expression;
         }
 
         public T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.VisitGrouping(this);
+            return visitor.VisitGroupingExpression(this);
         }
     }
 
-    public struct Literal : IExpression
+    public struct LiteralExpression : IExpression
     {
         public readonly object value;
-        public Literal(object value)
+        public LiteralExpression(object value)
         {
             this.value = value;
         }
 
         public T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.VisitLiteral(this);
+            return visitor.VisitLiteralExpression(this);
         }
     }
 
-    public struct Unary : IExpression
+    public struct UnaryExpression : IExpression
     {
         public readonly Token op;
         public readonly IExpression right;
-        public Unary(Token op, IExpression right)
+        public UnaryExpression(Token op, IExpression right)
         {
             this.op = op;
             this.right = right;
@@ -71,7 +71,7 @@ namespace min
 
         public T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.VisitUnary(this);
+            return visitor.VisitUnaryExpression(this);
         }
     }
 }

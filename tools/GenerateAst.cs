@@ -21,10 +21,10 @@ namespace tools
             string outputDir = args[0];
 
             DefineAst(outputDir, "Expressions", new List<string>() {
-                "Binary   : IExpression left, Token op, IExpression right",
-                "Grouping : IExpression expression",
-                "Literal  : object value",
-                "Unary    : Token op, IExpression right"
+                "BinaryExpression   : IExpression left, Token op, IExpression right",
+                "GroupingExpression : IExpression expression",
+                "LiteralExpression  : object value",
+                "UnaryExpression    : Token op, IExpression right"
             });
         }
 
@@ -33,7 +33,7 @@ namespace tools
         {
             using (StreamWriter outputFile = new StreamWriter(Path.Combine(outputDir, $"{baseName}.cs")))
             {
-                outputFile.WriteLine("namespace min");
+                outputFile.WriteLine($"namespace min.{baseName}");
                 outputFile.WriteLine("{");
 
                 outputFile.WriteLine("public interface IExpression");
