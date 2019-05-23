@@ -1,4 +1,4 @@
-namespace min.Expressions
+namespace min
 {
     public interface IExpression
     {

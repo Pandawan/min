@@ -34,6 +34,8 @@ namespace min
             this.source = source;
         }
 
+        #region Scanning
+
         public List<Token> ScanTokens()
         {
             while (IsAtEnd() == false)
@@ -124,6 +126,19 @@ namespace min
                     break;
             }
         }
+
+        /// <summary>
+        /// Get text of the current lexeme, create a token and add it to the list of tokens.
+        /// </summary>
+        /// <param name="type">The TokenType of the new token to add.</param>
+        /// <param name="literal">The literal value of the token.</param>
+        private void AddToken(TokenType type, object literal = null)
+        {
+            string text = source.Substring(start, current - start);
+            tokens.Add(new Token(type, text, literal, line));
+        }
+
+        #endregion
 
         #region Scanning Helpers
 
@@ -272,17 +287,6 @@ namespace min
         }
 
         #endregion
-
-        /// <summary>
-        /// Get text of the current lexeme, create a token and add it to the list of tokens.
-        /// </summary>
-        /// <param name="type">The TokenType of the new token to add.</param>
-        /// <param name="literal">The literal value of the token.</param>
-        private void AddToken(TokenType type, object literal = null)
-        {
-            string text = source.Substring(start, current - start);
-            tokens.Add(new Token(type, text, literal, line));
-        }
 
         #region Helpers 
 

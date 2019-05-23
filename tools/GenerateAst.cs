@@ -10,11 +10,11 @@ namespace tools
     public class GenerateAst
     {
         // Simply call "dotnet run -p tools ./min" from the root of the solution
-        public static void Main(string[] args)
+        public static void Start(string[] args)
         {
             if (args.Length != 1)
             {
-                Console.WriteLine("Usage: generate_ast <output directory>");
+                Console.WriteLine("Usage: gen_ast <output_directory>");
                 Environment.Exit(64);
             }
 

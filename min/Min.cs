@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Collections.Generic;
-using min.Expressions;
 
 namespace min
 {
@@ -12,28 +11,6 @@ namespace min
         /// </summary>
         private static bool hadError = false;
 
-        private static int Main(string[] args)
-        {
-            if (args.Length > 1)
-            {
-                Console.WriteLine("Usage: min [script]");
-                // Bad arguments exception (error code)
-                return 64;
-            }
-            else if (args.Length == 1)
-            {
-                // Execute script
-                RunFile(args[0]);
-                return 0;
-            }
-            else
-            {
-                // Run prompt
-                RunPrompt();
-                return 0;
-            }
-        }
-
         #region Running
 
         /// <summary>
@@ -41,18 +18,20 @@ namespace min
         /// </summary>
         /// <param name="path">The path of the file to run.</param>
         /// <returns>An exit code.</returns>
-        private static void RunFile(string path)
+        public static int RunFile(string path)
         {
             string source = File.ReadAllText(path);
             Run(source);
 
-            if (hadError) Exit(65);
+            if (hadError) return 65;
+
+            return 0;
         }
 
         /// <summary>
         /// Starts a console prompt to run in REPL mode.
         /// </summary>
-        private static void RunPrompt()
+        public static void RunPrompt()
         {
             while (true)
             {
@@ -86,19 +65,9 @@ namespace min
             Console.WriteLine(new Debug.AstPrinter().Print(expression));
         }
 
-        /// <summary>
-        /// Exit the program.
-        /// </summary>
-        /// <param name="exitCode">The exit code to return, default is 0.</param>
-        private static void Exit(int exitCode = 0)
-        {
-            // TODO: Add a list of hardcoded static/const exit codes
-            // 64 = Incorrect command usage
-            // 65 = Incorrect input data
-            Environment.Exit(exitCode);
-        }
-
         #endregion
+
+        #region Errors
 
         /// <summary>
         /// Report a simple error.
@@ -139,5 +108,7 @@ namespace min
             Console.WriteLine($"[line {line}] Error{where}: {message}");
             hadError = true;
         }
+
+        #endregion
     }
 }

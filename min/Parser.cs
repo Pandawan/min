@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using min.Expressions;
 
 namespace min
 {
@@ -18,6 +17,7 @@ namespace min
 
         public IExpression Parse()
         {
+            // TODO: See Challenges http://craftinginterpreters.com/parsing-expressions.html#challenges
             try
             {
                 return Expression();
@@ -28,6 +28,17 @@ namespace min
                 return null;
             }
         }
+
+        #region Expressions
+
+        /**
+            expression → literal | unary | binary | grouping ;
+            literal    → NUMBER | STRING | "false" | "true" | "nil" ;
+            grouping   → "(" expression ")" ;
+            unary      → ( "-" | "!" ) expression ;
+            binary     → expression operator expression ;
+            operator   → "==" | "!=" | "<" | "<=" | ">" | ">=" | "+"  | "-"  | "*" | "/" ;
+         */
 
         private IExpression Expression()
         {
@@ -142,6 +153,8 @@ namespace min
             throw Error(Peek(), "Expect expression.");
         }
 
+        #endregion
+
         /// <summary>
         /// Try to synchronize the parser after an error by moving until it reaches the next statement (after a semicolon or keyword tokens).
         /// </summary>
@@ -169,6 +182,8 @@ namespace min
 
             Advance();
         }
+
+        #region Helpers
 
         /// <summary>
         /// Get the current token in the list, without consuming it.
@@ -253,6 +268,8 @@ namespace min
         {
             return Peek().type == TokenType.EOF;
         }
+
+        #endregion
 
         /// <summary>
         /// Report a Parsing Error at a specific token.
