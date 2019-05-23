@@ -24,7 +24,9 @@ namespace tools
                 "BinaryExpression   : IExpression left, Token op, IExpression right",
                 "GroupingExpression : IExpression expression",
                 "LiteralExpression  : object value",
-                "UnaryExpression    : Token op, IExpression right"
+                "UnaryExpression    : Token op, IExpression right",
+                // Ternary doesn't need to know about the ? : tokens
+                "TernaryExpression  : IExpression conditional, IExpression thenExpression, IExpression elseExpression",
             });
         }
 
@@ -33,7 +35,7 @@ namespace tools
         {
             using (StreamWriter outputFile = new StreamWriter(Path.Combine(outputDir, $"{baseName}.cs")))
             {
-                outputFile.WriteLine($"namespace min.{baseName}");
+                outputFile.WriteLine($"namespace min");
                 outputFile.WriteLine("{");
 
                 outputFile.WriteLine("public interface IExpression");

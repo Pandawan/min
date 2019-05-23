@@ -11,6 +11,7 @@ namespace min
         T VisitGroupingExpression(GroupingExpression expressions);
         T VisitLiteralExpression(LiteralExpression expressions);
         T VisitUnaryExpression(UnaryExpression expressions);
+        T VisitTernaryExpression(TernaryExpression expressions);
     }
 
     public struct BinaryExpression : IExpression
@@ -72,6 +73,24 @@ namespace min
         public T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitUnaryExpression(this);
+        }
+    }
+
+    public struct TernaryExpression : IExpression
+    {
+        public readonly IExpression conditional;
+        public readonly IExpression thenExpression;
+        public readonly IExpression elseExpression;
+        public TernaryExpression(IExpression conditional, IExpression thenExpression, IExpression elseExpression)
+        {
+            this.conditional = conditional;
+            this.thenExpression = thenExpression;
+            this.elseExpression = elseExpression;
+        }
+
+        public T Accept<T>(IVisitor<T> visitor)
+        {
+            return visitor.VisitTernaryExpression(this);
         }
     }
 }

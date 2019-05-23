@@ -32,6 +32,11 @@ namespace min.Debug
             return Parenthesize(expression.op.lexeme, expression.right);
         }
 
+        public string VisitTernaryExpression(TernaryExpression expression)
+        {
+            return Parenthesize("conditional", expression.conditional, expression.thenExpression, expression.elseExpression);
+        }
+
         /// <summary>
         /// Format the given expressions into a string with parentheses around them.
         /// </summary>

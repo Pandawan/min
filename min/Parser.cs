@@ -32,17 +32,36 @@ namespace min
         #region Expressions
 
         /**
-            expression → literal | unary | binary | grouping ;
+            expression → literal | unary | binary | grouping | ternary ;
             literal    → NUMBER | STRING | "false" | "true" | "nil" ;
             grouping   → "(" expression ")" ;
             unary      → ( "-" | "!" ) expression ;
             binary     → expression operator expression ;
             operator   → "==" | "!=" | "<" | "<=" | ">" | ">=" | "+"  | "-"  | "*" | "/" ;
+            ternary    → condition "?" thenExpression ":" elseExpression ;
          */
 
         private IExpression Expression()
         {
-            return Equality();
+            return Ternary();
+        }
+
+        /// <summary>
+        /// Get an expression which might contain a ternary conditional expression (? :)
+        /// </summary>
+        private IExpression Ternary()
+        {
+            IExpression expression = Equality();
+
+            if (Match(TokenType.QUESTION))
+            {
+                IExpression thenExpression = Expression();
+                Consume(TokenType.COLON, "Expect ':' after conditional expression.");
+                IExpression elseExpression = Ternary();
+                expression = new TernaryExpression(expression, thenExpression, elseExpression);
+            }
+
+            return expression;
         }
 
         /// <summary>
