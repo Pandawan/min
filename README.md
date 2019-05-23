@@ -19,6 +19,9 @@ Available tools:
 ## TODO (after)
 
 - Add advanced operators (modulo, exponent, bitwise)
+- Add `==` vs `===` like in JavaScript
+- Add Array support `[]`
+- Add `instanceof` operator?
 - Change `print` from a keyword to a function
 - Add `foreach` loops (for in, for of, etc.)
 - Use `:` for inheritance, not `<`

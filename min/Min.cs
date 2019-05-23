@@ -7,9 +7,19 @@ namespace min
     class Min
     {
         /// <summary>
-        /// Whether or not the program encountered an error during compilation, execution, etc.
+        /// Keep a static version so that it can keep global state when used in REPL.
+        /// </summary>
+        private static readonly Interpreter interpreter = new Interpreter();
+
+        /// <summary>
+        /// Whether or not the program encountered an error during compilation.
         /// </summary>
         private static bool hadError = false;
+
+        /// <summary>
+        /// Whether or not the program encountered an error during execution.
+        /// </summary>
+        private static bool hadRuntimeError = false;
 
         #region Running
 
@@ -24,6 +34,7 @@ namespace min
             Run(source);
 
             if (hadError) return 65;
+            if (hadRuntimeError) return 70;
 
             return 0;
         }
@@ -61,8 +72,7 @@ namespace min
             // Stop if there was a syntax error.
             if (hadError) return;
 
-            // Temporary debug AstPrinter
-            Console.WriteLine(new Debug.AstPrinter().Print(expression));
+            interpreter.Interpret(expression);
         }
 
         #endregion
@@ -95,6 +105,12 @@ namespace min
             {
                 Report(token.line, $" at '{token.lexeme}'", message);
             }
+        }
+
+        public static void RuntimeError(RuntimeError error)
+        {
+            Console.WriteLine($"{error.Message}\n[line {error.token.line}]");
+            hadRuntimeError = true;
         }
 
         /// <summary>
