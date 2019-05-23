@@ -43,7 +43,26 @@ namespace min
 
         private IExpression Expression()
         {
-            return Ternary();
+            return Comma();
+        }
+
+        /// <summary>
+        /// Get an expression which might have comma separated expressions (as a BinaryExpression ,)
+        /// </summary>
+        /// <returns></returns>
+        private IExpression Comma()
+        {
+            IExpression left = Ternary();
+
+            while (Match(TokenType.COMMA))
+            {
+                // Get the previous comma as an operator
+                Token op = Previous();
+                IExpression right = Ternary();
+                left = new BinaryExpression(left, op, right);
+            }
+
+            return left;
         }
 
         /// <summary>

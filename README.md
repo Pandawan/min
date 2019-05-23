@@ -18,7 +18,7 @@ Available tools:
 
 ## TODO (after)
 
-- Add advanced operators like modulo, bitwise, power, etc.
+- Add advanced operators (modulo, exponent, bitwise)
 - Change `print` from a keyword to a function
 - Add `foreach` loops (for in, for of, etc.)
 - Use `:` for inheritance, not `<`
