@@ -31,7 +31,7 @@ namespace min
         public static int RunFile(string path)
         {
             string source = File.ReadAllText(path);
-            Run(source);
+            Run(source, false);
 
             if (hadError) return 65;
             if (hadRuntimeError) return 70;
@@ -47,7 +47,7 @@ namespace min
             while (true)
             {
                 Console.Write("> ");
-                Run(Console.ReadLine());
+                Run(Console.ReadLine(), true);
 
                 // If there was an error, don't crash the entire program
                 hadError = false;
@@ -59,7 +59,8 @@ namespace min
         /// Run the source code provided.
         /// </summary>
         /// <param name="source">The source code to run.</param>
-        private static void Run(string source)
+        /// <param name="isRepl">Whether or not this is running as REPL</param>
+        private static void Run(string source, bool isRepl)
         {
             // Scanner/Lexer, read tokens
             Scanner scanner = new Scanner(source);
@@ -67,12 +68,12 @@ namespace min
 
             // Parser, group tokens into expressions
             Parser parser = new Parser(tokens);
-            IExpression expression = parser.Parse();
+            List<IStatement> statements = parser.Parse();
 
             // Stop if there was a syntax error.
             if (hadError) return;
 
-            interpreter.Interpret(expression);
+            interpreter.Interpret(statements, isRepl);
         }
 
         #endregion
@@ -109,7 +110,7 @@ namespace min
 
         public static void RuntimeError(RuntimeError error)
         {
-            Console.WriteLine($"{error.Message}\n[line {error.token.line}]");
+            Console.WriteLine($"[line {error.token.line}] {error.Message}");
             hadRuntimeError = true;
         }
 

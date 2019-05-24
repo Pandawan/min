@@ -2,16 +2,18 @@ namespace min
 {
     public interface IExpression
     {
-        T Accept<T>(IVisitor<T> visitor);
+        T Accept<T>(IExpressionVisitor<T> visitor);
     }
 
-    public interface IVisitor<T>
+    public interface IExpressionVisitor<T>
     {
-        T VisitBinaryExpression(BinaryExpression expressions);
-        T VisitGroupingExpression(GroupingExpression expressions);
-        T VisitLiteralExpression(LiteralExpression expressions);
-        T VisitUnaryExpression(UnaryExpression expressions);
-        T VisitTernaryExpression(TernaryExpression expressions);
+        T VisitBinaryExpression(BinaryExpression expression);
+        T VisitGroupingExpression(GroupingExpression expression);
+        T VisitLiteralExpression(LiteralExpression expression);
+        T VisitUnaryExpression(UnaryExpression expression);
+        T VisitTernaryExpression(TernaryExpression expression);
+        T VisitVariableExpression(VariableExpression expression);
+        T VisitAssignExpression(AssignExpression expression);
     }
 
     public struct BinaryExpression : IExpression
@@ -19,6 +21,7 @@ namespace min
         public readonly IExpression left;
         public readonly Token op;
         public readonly IExpression right;
+
         public BinaryExpression(IExpression left, Token op, IExpression right)
         {
             this.left = left;
@@ -26,7 +29,7 @@ namespace min
             this.right = right;
         }
 
-        public T Accept<T>(IVisitor<T> visitor)
+        public T Accept<T>(IExpressionVisitor<T> visitor)
         {
             return visitor.VisitBinaryExpression(this);
         }
@@ -35,12 +38,13 @@ namespace min
     public struct GroupingExpression : IExpression
     {
         public readonly IExpression expression;
+
         public GroupingExpression(IExpression expression)
         {
             this.expression = expression;
         }
 
-        public T Accept<T>(IVisitor<T> visitor)
+        public T Accept<T>(IExpressionVisitor<T> visitor)
         {
             return visitor.VisitGroupingExpression(this);
         }
@@ -49,12 +53,13 @@ namespace min
     public struct LiteralExpression : IExpression
     {
         public readonly object value;
+
         public LiteralExpression(object value)
         {
             this.value = value;
         }
 
-        public T Accept<T>(IVisitor<T> visitor)
+        public T Accept<T>(IExpressionVisitor<T> visitor)
         {
             return visitor.VisitLiteralExpression(this);
         }
@@ -64,13 +69,14 @@ namespace min
     {
         public readonly Token op;
         public readonly IExpression right;
+
         public UnaryExpression(Token op, IExpression right)
         {
             this.op = op;
             this.right = right;
         }
 
-        public T Accept<T>(IVisitor<T> visitor)
+        public T Accept<T>(IExpressionVisitor<T> visitor)
         {
             return visitor.VisitUnaryExpression(this);
         }
@@ -81,6 +87,7 @@ namespace min
         public readonly IExpression conditional;
         public readonly IExpression thenExpression;
         public readonly IExpression elseExpression;
+
         public TernaryExpression(IExpression conditional, IExpression thenExpression, IExpression elseExpression)
         {
             this.conditional = conditional;
@@ -88,9 +95,41 @@ namespace min
             this.elseExpression = elseExpression;
         }
 
-        public T Accept<T>(IVisitor<T> visitor)
+        public T Accept<T>(IExpressionVisitor<T> visitor)
         {
             return visitor.VisitTernaryExpression(this);
+        }
+    }
+
+    public struct VariableExpression : IExpression
+    {
+        public readonly Token name;
+
+        public VariableExpression(Token name)
+        {
+            this.name = name;
+        }
+
+        public T Accept<T>(IExpressionVisitor<T> visitor)
+        {
+            return visitor.VisitVariableExpression(this);
+        }
+    }
+
+    public struct AssignExpression : IExpression
+    {
+        public readonly Token name;
+        public readonly IExpression value;
+
+        public AssignExpression(Token name, IExpression value)
+        {
+            this.name = name;
+            this.value = value;
+        }
+
+        public T Accept<T>(IExpressionVisitor<T> visitor)
+        {
+            return visitor.VisitAssignExpression(this);
         }
     }
 }

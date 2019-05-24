@@ -15,25 +15,121 @@ namespace min
             this.tokens = tokens;
         }
 
-        public IExpression Parse()
+        public List<IStatement> Parse()
         {
+            List<IStatement> statements = new List<IStatement>();
+            while (IsAtEnd() == false)
+            {
+                statements.Add(Declaration());
+            }
+            return statements;
+
             // TODO: See Challenges http://craftinginterpreters.com/parsing-expressions.html#challenges
+        }
+
+        #region Statements
+        /**
+            program   → declaration* EOF ;
+            declaration → letDecl | statement ;
+            letDecl → "let" IDENTIFIER ( "=" expression )? ";" ;
+            statement → exprStmt | printStmt | block ;
+            exprStmt  → expression ";" ;
+            printStmt → "print" expression ";" ;
+            block     → "{" declaration* "}" ;
+         */
+
+        private IStatement Declaration()
+        {
             try
             {
-                return Expression();
+                if (Match(TokenType.LET)) return LetDeclaration();
+                return Statement();
             }
-            // Temporary mode to exit out of panic mode on Parse Error.
             catch (ParseError error)
             {
+                Synchronize();
                 return null;
             }
         }
 
+        /// <summary>
+        /// Get a statement.
+        /// </summary>
+        private IStatement Statement()
+        {
+            if (Match(TokenType.PRINT)) return PrintStatement();
+            if (Match(TokenType.LEFT_BRACE)) return new BlockStatement(BlockStatement());
+
+            return ExpressionStatement();
+        }
+
+        /// <summary>
+        /// Get a Print Statement (print <expression>;)
+        /// </summary>
+        private IStatement PrintStatement()
+        {
+            // TODO: Convert that to a library print call
+            IExpression value = Expression();
+            Consume(TokenType.SEMICOLON, "Expect ';' after value.");
+            return new PrintStatement(value);
+        }
+
+        /// <summary>
+        /// Get an expression statement
+        /// </summary>
+        private IStatement ExpressionStatement()
+        {
+            IExpression expression = Expression();
+
+            Consume(TokenType.SEMICOLON, "Expect ';' after value.");
+            return new ExpressionStatement(expression);
+        }
+
+        /// <summary>
+        /// Get a list of declarations inside a block ( {} )
+        /// </summary>
+        private List<IStatement> BlockStatement()
+        {
+            List<IStatement> statements = new List<IStatement>();
+
+            while (Check(TokenType.RIGHT_BRACE) == false && IsAtEnd() == false)
+            {
+                statements.Add(Declaration());
+            }
+
+            Consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
+            return statements;
+        }
+
+        /// <summary>
+        /// Get a let declaration (let <name> [= initializer])
+        /// </summary>
+        private IStatement LetDeclaration()
+        {
+            Token name = Consume(TokenType.IDENTIFIER, "Expect variable name.");
+
+            // Try to match an initializer, skip if none
+            IExpression initializer = null;
+            if (Match(TokenType.EQUAL))
+            {
+                initializer = Expression();
+            }
+
+            Consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
+            return new LetStatement(name, initializer);
+        }
+
+        #endregion
+
         #region Expressions
 
         /**
+            expression → assignment ;
+            assignment → IDENTIFIER "=" assignment | equality ;
+
+
             expression → literal | unary | binary | grouping | ternary ;
-            literal    → NUMBER | STRING | "false" | "true" | "nil" ;
+            literal    → NUMBER | STRING | "false" | "true" | "null" | IDENTIFIER ;
             grouping   → "(" expression ")" ;
             unary      → ( "-" | "!" ) expression ;
             binary     → expression operator expression ;
@@ -52,17 +148,42 @@ namespace min
         /// <returns></returns>
         private IExpression Comma()
         {
-            IExpression left = Ternary();
+            IExpression left = Assignment();
 
             while (Match(TokenType.COMMA))
             {
                 // Get the previous comma as an operator
                 Token op = Previous();
-                IExpression right = Ternary();
+                IExpression right = Assignment();
                 left = new BinaryExpression(left, op, right);
             }
 
             return left;
+        }
+
+        /// <summary>
+        /// Get an expression which might contain a variable assignment (IDENTIFIER = VALUE)
+        /// </summary>
+        private IExpression Assignment()
+        {
+            IExpression expression = Ternary();
+
+            if (Match(TokenType.EQUAL))
+            {
+                Token equals = Previous();
+                IExpression value = Assignment();
+
+                if (expression is VariableExpression)
+                {
+                    Token name = ((VariableExpression)expression).name;
+                    return new AssignExpression(name, value);
+                }
+
+                // Error but don't throw because we don't need to resynchronize, not confused state
+                Error(equals, "Invalid assignment target.");
+            }
+
+            return expression;
         }
 
         /// <summary>
@@ -180,6 +301,11 @@ namespace min
                 return new LiteralExpression(Previous().literal);
             }
 
+            if (Match(TokenType.IDENTIFIER))
+            {
+                return new VariableExpression(Previous());
+            }
+
             if (Match(TokenType.LEFT_PAREN))
             {
                 IExpression expression = Expression();
@@ -208,7 +334,7 @@ namespace min
                 {
                     case TokenType.CLASS:
                     case TokenType.FUNCTION:
-                    case TokenType.VAR:
+                    case TokenType.LET:
                     case TokenType.FOR:
                     case TokenType.IF:
                     case TokenType.WHILE:

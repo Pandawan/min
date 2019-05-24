@@ -3,21 +3,106 @@ using System.Collections.Generic;
 
 namespace min
 {
-    public class Interpreter : IVisitor<object>
+    public class Interpreter : IExpressionVisitor<object>, IStatementVisitor<object>
     {
+        private Environment environment = new Environment();
 
-        public void Interpret(IExpression expression)
+        public void Interpret(List<IStatement> statements, bool isRepl)
         {
             try
             {
-                object value = Evaluate(expression);
-                Console.WriteLine(Stringify(value));
+                // If REPL & statement is an expression, print it to REPL (without having to do print)
+                if (isRepl && statements.Count == 1 && statements[0] is ExpressionStatement)
+                {
+                    ExpressionStatement statement = (ExpressionStatement)statements[0];
+                    object value = Evaluate(statement.expression);
+                    Console.WriteLine(Stringify(value));
+                }
+                else
+                {
+                    foreach (IStatement statement in statements)
+                    {
+                        Execute(statement);
+                    }
+                }
             }
             catch (RuntimeError error)
             {
                 Min.RuntimeError(error);
             }
         }
+
+        #region Statements
+        /**
+         * Note: IStatementVisitor uses the type "object" instead of "void" because void is not allowed in C#
+         * To remedy this issue, simply return null in all Visit_Statement methods
+         */
+
+
+        public object VisitExpressionStatement(ExpressionStatement statement)
+        {
+            Evaluate(statement.expression);
+            return null;
+        }
+
+        public object VisitPrintStatement(PrintStatement statement)
+        {
+            object value = Evaluate(statement.expression);
+            Console.WriteLine(Stringify(value));
+            return null;
+        }
+
+        public object VisitLetStatement(LetStatement statement)
+        {
+            // Default value of a variable is null
+            object value = null;
+
+            if (statement.initializer != null)
+            {
+                value = Evaluate(statement.initializer);
+            }
+
+            environment.Define(statement.name, value);
+
+            return null;
+        }
+
+        public object VisitBlockStatement(BlockStatement statement)
+        {
+            // Execute this block and pass it a new environment with the current one to enclose it.
+            ExecuteBlock(statement.statements, new Environment(environment));
+            return null;
+        }
+
+        private void Execute(IStatement statement)
+        {
+            statement.Accept(this);
+        }
+
+        private void ExecuteBlock(List<IStatement> statements, Environment environment)
+        {
+            // Keep a copy of the current environment before replacing it
+            Environment previous = this.environment;
+            try
+            {
+                this.environment = environment;
+
+                // Run through all of the statements with the new environment
+                foreach (IStatement statement in statements)
+                {
+                    Execute(statement);
+                }
+            }
+            finally
+            {
+                // Restore the previous environment even if an exception is thrown
+                this.environment = previous;
+            }
+        }
+
+        #endregion
+
+        #region Expressions
 
         public object VisitLiteralExpression(LiteralExpression expressions)
         {
@@ -104,10 +189,27 @@ namespace min
             else return elseExpression;
         }
 
+
+        public object VisitVariableExpression(VariableExpression expression)
+        {
+            return environment.Get(expression.name);
+        }
+
+        public object VisitAssignExpression(AssignExpression expression)
+        {
+            object value = Evaluate(expression.value);
+
+            environment.Assign(expression.name, value);
+
+            return value;
+        }
+
         private object Evaluate(IExpression expression)
         {
             return expression.Accept(this);
         }
+
+        #endregion
 
         /// <summary>
         /// Whether or not the given value is truthy.

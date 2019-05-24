@@ -14,7 +14,15 @@ If you want to use one of the tools, run `dotnet run --project tools <tool_name>
 
 Available tools:
 
-- `gen_ast <output_directory>`: Generates an Expressions.cs file for Abstract Syntax Tree use.
+- `gen_ast [expression|statement] <output_directory>`: Generates an `Expressions.cs` or `Statements.cs` file for Abstract Syntax Tree use.
+
+## Additions
+
+Alongside the features supported in Crafting Interpreters, I've added
+
+- Ternary operator `? :`
+- Comma operator `,`
+- (Non-nested) block comments `/* */`
 
 ## TODO (after)
 
@@ -26,3 +34,5 @@ Available tools:
 - Add `foreach` loops (for in, for of, etc.)
 - Use `:` for inheritance, not `<`
 - Add a `Min.version` as part of the Min library/object (kind of meta object)
+- Add nested block comment support `/* /* */ */`
+- Add comparison support for strings `5 < "hey"`

@@ -8,7 +8,7 @@ namespace min
             { "true", TokenType.TRUE },
             { "false", TokenType.FALSE },
             { "null", TokenType.NULL },
-            { "var", TokenType.VAR },
+            { "let", TokenType.LET },
             { "if", TokenType.IF },
             { "else", TokenType.ELSE },
             { "for", TokenType.FOR },

@@ -4,7 +4,7 @@ using System.Text;
 namespace min.Debug
 {
     // TODO: Continue ASTPrinter here https://craftinginterpreters.com/representing-code.html#a-(not-very)-pretty-printer
-    public class AstPrinter : IVisitor<string>
+    public class AstPrinter : IExpressionVisitor<string>
     {
         public string Print(IExpression expression)
         {
@@ -35,6 +35,16 @@ namespace min.Debug
         public string VisitTernaryExpression(TernaryExpression expression)
         {
             return Parenthesize("conditional", expression.conditional, expression.thenExpression, expression.elseExpression);
+        }
+
+        public string VisitVariableExpression(VariableExpression expression)
+        {
+            return Parenthesize("read", expression);
+        }
+
+        public string VisitAssignExpression(AssignExpression expression)
+        {
+            return Parenthesize($"= {expression.name.lexeme}", expression.value);
         }
 
         /// <summary>
