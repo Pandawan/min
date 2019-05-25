@@ -10,8 +10,10 @@ namespace min
     public interface IStatementVisitor<T>
     {
         T VisitExpressionStatement(ExpressionStatement statement);
+        T VisitIfStatement(IfStatement statement);
         T VisitPrintStatement(PrintStatement statement);
         T VisitLetStatement(LetStatement statement);
+        T VisitWhileStatement(WhileStatement statement);
         T VisitBlockStatement(BlockStatement statement);
     }
 
@@ -27,6 +29,25 @@ namespace min
         public T Accept<T>(IStatementVisitor<T> visitor)
         {
             return visitor.VisitExpressionStatement(this);
+        }
+    }
+
+    public struct IfStatement : IStatement
+    {
+        public readonly IExpression condition;
+        public readonly IStatement thenBranch;
+        public readonly IStatement elseBranch;
+
+        public IfStatement(IExpression condition, IStatement thenBranch, IStatement elseBranch)
+        {
+            this.condition = condition;
+            this.thenBranch = thenBranch;
+            this.elseBranch = elseBranch;
+        }
+
+        public T Accept<T>(IStatementVisitor<T> visitor)
+        {
+            return visitor.VisitIfStatement(this);
         }
     }
 
@@ -59,6 +80,23 @@ namespace min
         public T Accept<T>(IStatementVisitor<T> visitor)
         {
             return visitor.VisitLetStatement(this);
+        }
+    }
+
+    public struct WhileStatement : IStatement
+    {
+        public readonly IExpression condition;
+        public readonly IStatement body;
+
+        public WhileStatement(IExpression condition, IStatement body)
+        {
+            this.condition = condition;
+            this.body = body;
+        }
+
+        public T Accept<T>(IStatementVisitor<T> visitor)
+        {
+            return visitor.VisitWhileStatement(this);
         }
     }
 

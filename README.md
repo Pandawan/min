@@ -14,7 +14,7 @@ If you want to use one of the tools, run `dotnet run --project tools <tool_name>
 
 Available tools:
 
-- `gen_ast [expression|statement] <output_directory>`: Generates an `Expressions.cs` or `Statements.cs` file for Abstract Syntax Tree use.
+- `gen_ast <expression|statement> <output_directory>`: Generates an `Expressions.cs` or `Statements.cs` file for Abstract Syntax Tree use.
 
 ## Additions
 

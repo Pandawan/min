@@ -32,9 +32,12 @@ namespace min
             program   → declaration* EOF ;
             declaration → letDecl | statement ;
             letDecl → "let" IDENTIFIER ( "=" expression )? ";" ;
-            statement → exprStmt | printStmt | block ;
             exprStmt  → expression ";" ;
+            statement → exprStmt | ifStmt | printStmt | whileStmt | block ;
+            forStmt   → "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
+            ifStmt    → "if" "(" expression ")" statement ( "else" statement )? ;
             printStmt → "print" expression ";" ;
+            whileStmt → "while" "(" expression ")" statement ;  
             block     → "{" declaration* "}" ;
          */
 
@@ -57,10 +60,105 @@ namespace min
         /// </summary>
         private IStatement Statement()
         {
+            if (Match(TokenType.FOR)) return ForStatement();
+            if (Match(TokenType.IF)) return IfStatement();
             if (Match(TokenType.PRINT)) return PrintStatement();
+            if (Match(TokenType.WHILE)) return WhileStatement();
             if (Match(TokenType.LEFT_BRACE)) return new BlockStatement(BlockStatement());
 
             return ExpressionStatement();
+        }
+
+        /// <summary>
+        /// Get a for statement and compile it to a while (under the hood).
+        /// </summary>
+        private IStatement ForStatement()
+        {
+            /**
+                Desugaring for loop into a while loop:
+
+                initializer;
+                while (condition) {
+                    body;
+                    increment;
+                }
+            */
+
+            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
+
+            // First part of for loop, an expression/declaration that runs once
+            IStatement initializer;
+            if (Match(TokenType.SEMICOLON))
+            {
+                initializer = null;
+            }
+            else if (Match(TokenType.LET))
+            {
+                initializer = LetDeclaration();
+            }
+            else
+            {
+                initializer = ExpressionStatement();
+            }
+
+            // Second part of for loop, a condition that is checked on every iteration
+            IExpression condition = null;
+            if (Check(TokenType.SEMICOLON))
+            {
+                condition = Expression();
+            }
+
+            Consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
+
+            // Third part of for loop, an incrementer that runs every iteration
+            IExpression increment = null;
+            if (Check(TokenType.RIGHT_PAREN) == false)
+            {
+                increment = Expression();
+            }
+
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.");
+
+            IStatement body = Statement();
+
+            // If there is an increment
+            if (increment != null)
+            {
+                // Add the increment to the body of the while loop
+                body = new BlockStatement(new List<IStatement>(){
+                    body, new ExpressionStatement(increment)
+                });
+            }
+
+            // Create a while loop with condition + body (which also has increment)
+            if (condition == null) condition = new LiteralExpression(true);
+            body = new WhileStatement(condition, body);
+
+            // Lastly, add an initializer before the while loop
+            if (initializer != null)
+            {
+                body = new BlockStatement(new List<IStatement>() {
+                    initializer,
+                    body
+                });
+            }
+
+            return body;
+        }
+
+        /// <summary>
+        /// Get an if statement (which might contain an else).
+        /// </summary>
+        private IStatement IfStatement()
+        {
+            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.");
+            IExpression condition = Expression();
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition");
+
+            IStatement thenBranch = Statement();
+            IStatement elseBranch = Match(TokenType.ELSE) ? Statement() : null;
+
+            return new IfStatement(condition, thenBranch, elseBranch);
         }
 
         /// <summary>
@@ -72,6 +170,19 @@ namespace min
             IExpression value = Expression();
             Consume(TokenType.SEMICOLON, "Expect ';' after value.");
             return new PrintStatement(value);
+        }
+
+        /// <summary>
+        /// Get a while statament.
+        /// </summary>
+        private IStatement WhileStatement()
+        {
+            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.");
+            IExpression condition = Expression();
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.");
+            IStatement body = Statement();
+
+            return new WhileStatement(condition, body);
         }
 
         /// <summary>
@@ -125,7 +236,9 @@ namespace min
 
         /**
             expression → assignment ;
-            assignment → IDENTIFIER "=" assignment | equality ;
+            assignment → IDENTIFIER "=" assignment | logic_or ;
+            logic_or   → logic_and ( "or" logic_and )* ;
+            logic_and  → equality ( "and" equality )* ;
 
 
             expression → literal | unary | binary | grouping | ternary ;
@@ -166,7 +279,7 @@ namespace min
         /// </summary>
         private IExpression Assignment()
         {
-            IExpression expression = Ternary();
+            IExpression expression = Or();
 
             if (Match(TokenType.EQUAL))
             {
@@ -181,6 +294,41 @@ namespace min
 
                 // Error but don't throw because we don't need to resynchronize, not confused state
                 Error(equals, "Invalid assignment target.");
+            }
+
+            return expression;
+        }
+
+        /// <summary>
+        /// Get an expression which might contain an OR condition.
+        /// </summary>
+        private IExpression Or()
+        {
+            IExpression expression = And();
+
+            // Keep looping through all OR expressions (and others)
+            while (Match(TokenType.OR))
+            {
+                Token op = Previous();
+                IExpression right = And();
+                expression = new LogicalExpression(expression, op, right);
+            }
+
+            return expression;
+        }
+
+        /// <summary>
+        /// Get an expression which might contain an AND condition.
+        /// </summary>
+        private IExpression And()
+        {
+            IExpression expression = Ternary();
+
+            while (Match(TokenType.AND))
+            {
+                Token op = Previous();
+                IExpression right = Ternary();
+                expression = new LogicalExpression(expression, op, right);
             }
 
             return expression;

@@ -27,6 +27,11 @@ namespace min.Debug
             return expression.value.ToString();
         }
 
+        public string VisitLogicalExpression(LogicalExpression expression)
+        {
+            return Parenthesize(expression.op.lexeme, expression.left, expression.right);
+        }
+
         public string VisitUnaryExpression(UnaryExpression expression)
         {
             return Parenthesize(expression.op.lexeme, expression.right);

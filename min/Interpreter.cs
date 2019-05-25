@@ -45,6 +45,19 @@ namespace min
             return null;
         }
 
+        public object VisitIfStatement(IfStatement statement)
+        {
+            if (IsTruthy(Evaluate(statement.condition)))
+            {
+                Execute(statement.thenBranch);
+            }
+            else
+            {
+                Execute(statement.elseBranch);
+            }
+            return null;
+        }
+
         public object VisitPrintStatement(PrintStatement statement)
         {
             object value = Evaluate(statement.expression);
@@ -64,6 +77,15 @@ namespace min
 
             environment.Define(statement.name, value);
 
+            return null;
+        }
+
+        public object VisitWhileStatement(WhileStatement statement)
+        {
+            while (IsTruthy(Evaluate(statement.condition)))
+            {
+                Execute(statement.body);
+            }
             return null;
         }
 
@@ -104,9 +126,28 @@ namespace min
 
         #region Expressions
 
+
         public object VisitLiteralExpression(LiteralExpression expressions)
         {
             return expressions.value;
+        }
+
+        public object VisitLogicalExpression(LogicalExpression expression)
+        {
+            object left = Evaluate(expression.left);
+
+            if (expression.op.type == TokenType.OR)
+            {
+                // OR short circuit, true if the first one is true
+                if (IsTruthy(left)) return left;
+            }
+            else
+            {
+                // AND short circuit, false if the first one is false
+                if (IsTruthy(left) == false) return left;
+            }
+
+            return Evaluate(expression.right);
         }
 
         public object VisitGroupingExpression(GroupingExpression expression)
@@ -221,7 +262,7 @@ namespace min
             // Null is falsy
             if (value == null) return false;
             // String is falsy if null or empty
-            if (value is string) return string.IsNullOrEmpty((string)value);
+            if (value is string) return string.IsNullOrEmpty((string)value) == false;
             // Bool is already truthy
             if (value is bool) return (bool)value;
             // Empty arrays are falsy

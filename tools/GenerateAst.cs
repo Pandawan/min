@@ -14,7 +14,7 @@ namespace tools
         {
             if (args.Length != 2)
             {
-                Console.WriteLine("Usage: gen_ast [expression|statement] <output_directory>");
+                Console.WriteLine("Usage: gen_ast <expression|statement> <output_directory>");
                 Environment.Exit(64);
             }
 
@@ -27,6 +27,7 @@ namespace tools
                     "BinaryExpression   : IExpression left, Token op, IExpression right",
                     "GroupingExpression : IExpression expression",
                     "LiteralExpression  : object value",
+                    "LogicalExpression  : IExpression left, Token op, IExpression right",
                     "UnaryExpression    : Token op, IExpression right",
                     // Ternary doesn't need to know about the ? : tokens
                     "TernaryExpression  : IExpression conditional, IExpression thenExpression, IExpression elseExpression",
@@ -39,8 +40,10 @@ namespace tools
             {
                 DefineAst(outputDir, "Statement", new List<string>() {
                     "ExpressionStatement : IExpression expression",
+                    "IfStatement         : IExpression condition, IStatement thenBranch, IStatement elseBranch",
                     "PrintStatement      : IExpression expression",
                     "LetStatement        : Token name, IExpression initializer",
+                    "WhileStatement      : IExpression condition, IStatement body",
                     "BlockStatement      : List<IStatement> statements",
                 });
                 Console.WriteLine($"Successfully generated file Statements.cs in {args[1]}");

@@ -10,6 +10,7 @@ namespace min
         T VisitBinaryExpression(BinaryExpression expression);
         T VisitGroupingExpression(GroupingExpression expression);
         T VisitLiteralExpression(LiteralExpression expression);
+        T VisitLogicalExpression(LogicalExpression expression);
         T VisitUnaryExpression(UnaryExpression expression);
         T VisitTernaryExpression(TernaryExpression expression);
         T VisitVariableExpression(VariableExpression expression);
@@ -62,6 +63,25 @@ namespace min
         public T Accept<T>(IExpressionVisitor<T> visitor)
         {
             return visitor.VisitLiteralExpression(this);
+        }
+    }
+
+    public struct LogicalExpression : IExpression
+    {
+        public readonly IExpression left;
+        public readonly Token op;
+        public readonly IExpression right;
+
+        public LogicalExpression(IExpression left, Token op, IExpression right)
+        {
+            this.left = left;
+            this.op = op;
+            this.right = right;
+        }
+
+        public T Accept<T>(IExpressionVisitor<T> visitor)
+        {
+            return visitor.VisitLogicalExpression(this);
         }
     }
 
