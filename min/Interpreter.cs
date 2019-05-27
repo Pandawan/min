@@ -1,11 +1,27 @@
 using System;
 using System.Collections.Generic;
+using min.lib;
 
 namespace min
 {
     public class Interpreter : IExpressionVisitor<object>, IStatementVisitor<object>
     {
-        private Environment environment = new Environment();
+        /// <summary>
+        /// Fixed reference to the global environment.
+        /// </summary>
+        public readonly Environment globals = new Environment();
+
+        /// <summary>
+        /// Current environment of the interpreter.
+        /// </summary>
+        private Environment environment;
+
+        public Interpreter()
+        {
+            // Add all the native library functions/objects to the global environment
+            NativeLibrary.Initialize(globals);
+            environment = globals;
+        }
 
         public void Interpret(List<IStatement> statements, bool isRepl)
         {
@@ -45,13 +61,21 @@ namespace min
             return null;
         }
 
+        public object VisitFunctionStatement(FunctionStatement statement)
+        {
+            // Use interpreter's current environment to allow for functions inside functions (closure)
+            MinFunction function = new MinFunction(statement, environment);
+            environment.Define(statement.name, function);
+            return null;
+        }
+
         public object VisitIfStatement(IfStatement statement)
         {
             if (IsTruthy(Evaluate(statement.condition)))
             {
                 Execute(statement.thenBranch);
             }
-            else
+            else if (statement.elseBranch != null)
             {
                 Execute(statement.elseBranch);
             }
@@ -63,6 +87,13 @@ namespace min
             object value = Evaluate(statement.expression);
             Console.WriteLine(Stringify(value));
             return null;
+        }
+
+        public object VisitReturnStatement(ReturnStatement statement)
+        {
+            object value = null;
+            if (statement.value != null) value = Evaluate(statement.value);
+            throw new Return(value);
         }
 
         public object VisitLetStatement(LetStatement statement)
@@ -101,7 +132,7 @@ namespace min
             statement.Accept(this);
         }
 
-        private void ExecuteBlock(List<IStatement> statements, Environment environment)
+        public void ExecuteBlock(List<IStatement> statements, Environment environment)
         {
             // Keep a copy of the current environment before replacing it
             Environment previous = this.environment;
@@ -215,9 +246,39 @@ namespace min
                     return (double)left <= (double)right;
                 case TokenType.BANG_EQUAL: return !IsEqual(left, right);
                 case TokenType.EQUAL_EQUAL: return IsEqual(left, right);
+                case TokenType.COMMA: return right;
             }
 
             return null;
+        }
+
+
+        public object VisitCallExpression(CallExpression expression)
+        {
+            object callee = Evaluate(expression.callee);
+
+            List<object> arguments = new List<object>();
+            foreach (IExpression argument in expression.arguments)
+            {
+                arguments.Add(Evaluate(argument));
+            }
+
+            // Incorrect call, the calle cannot be called (ie. "some string"() )
+            if (callee is ICallable == false)
+            {
+                throw new RuntimeError(expression.paren, "Can only call functions and classes.");
+            }
+
+            ICallable function = (ICallable)callee;
+
+            // Not correct number of arguments
+            if (arguments.Count != function.Arity())
+            {
+                // TODO: Might want to make it like JavaScript where it uses null when not enough, and discards when too many
+                throw new RuntimeError(expression.paren, $"Expected {function.Arity()} arguments but got {arguments.Count}.");
+            }
+
+            return function.Call(this, expression, arguments);
         }
 
         public object VisitTernaryExpression(TernaryExpression expression)
@@ -305,7 +366,7 @@ namespace min
         /// </summary>
         /// <param name="value">The value to convert.</param>
         /// <returns>The string representation of that value.</returns>
-        private string Stringify(object value)
+        public string Stringify(object value)
         {
             if (value == null) return "null";
             if (value is bool) return (bool)value ? "true" : "false";

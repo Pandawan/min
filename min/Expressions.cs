@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace min
 {
     public interface IExpression
@@ -8,6 +10,7 @@ namespace min
     public interface IExpressionVisitor<T>
     {
         T VisitBinaryExpression(BinaryExpression expression);
+        T VisitCallExpression(CallExpression expression);
         T VisitGroupingExpression(GroupingExpression expression);
         T VisitLiteralExpression(LiteralExpression expression);
         T VisitLogicalExpression(LogicalExpression expression);
@@ -33,6 +36,25 @@ namespace min
         public T Accept<T>(IExpressionVisitor<T> visitor)
         {
             return visitor.VisitBinaryExpression(this);
+        }
+    }
+
+    public struct CallExpression : IExpression
+    {
+        public readonly IExpression callee;
+        public readonly Token paren;
+        public readonly List<IExpression> arguments;
+
+        public CallExpression(IExpression callee, Token paren, List<IExpression> arguments)
+        {
+            this.callee = callee;
+            this.paren = paren;
+            this.arguments = arguments;
+        }
+
+        public T Accept<T>(IExpressionVisitor<T> visitor)
+        {
+            return visitor.VisitCallExpression(this);
         }
     }
 

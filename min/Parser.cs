@@ -29,22 +29,27 @@ namespace min
 
         #region Statements
         /**
-            program   → declaration* EOF ;
-            declaration → letDecl | statement ;
-            letDecl → "let" IDENTIFIER ( "=" expression )? ";" ;
-            exprStmt  → expression ";" ;
-            statement → exprStmt | ifStmt | printStmt | whileStmt | block ;
-            forStmt   → "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
-            ifStmt    → "if" "(" expression ")" statement ( "else" statement )? ;
-            printStmt → "print" expression ";" ;
-            whileStmt → "while" "(" expression ")" statement ;  
-            block     → "{" declaration* "}" ;
+            program     → declaration* EOF ;
+            declaration → functionDecl | letDecl | statement ;
+            funDecl     → "function" function ;
+            function    → IDENTIFIER "(" parameters? ")" block ;
+            parameters  → IDENTIFIER ( "," IDENTIFIER )* ;
+            letDecl     → "let" IDENTIFIER ( "=" expression )? ";" ;
+            exprStmt    → expression ";" ;
+            statement   → exprStmt | ifStmt | printStmt | returnStmt | whileStmt | block ;
+            forStmt     → "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
+            ifStmt      → "if" "(" expression ")" statement ( "else" statement )? ;
+            printStmt   → "print" expression ";" ;
+            returnStmt  → "return" expression? ";" ;
+            whileStmt   → "while" "(" expression ")" statement ;  
+            block       → "{" declaration* "}" ;
          */
 
         private IStatement Declaration()
         {
             try
             {
+                if (Match(TokenType.FUNCTION)) return FunctionStatement("function");
                 if (Match(TokenType.LET)) return LetDeclaration();
                 return Statement();
             }
@@ -63,6 +68,7 @@ namespace min
             if (Match(TokenType.FOR)) return ForStatement();
             if (Match(TokenType.IF)) return IfStatement();
             if (Match(TokenType.PRINT)) return PrintStatement();
+            if (Match(TokenType.RETURN)) return ReturnStatement();
             if (Match(TokenType.WHILE)) return WhileStatement();
             if (Match(TokenType.LEFT_BRACE)) return new BlockStatement(BlockStatement());
 
@@ -103,7 +109,7 @@ namespace min
 
             // Second part of for loop, a condition that is checked on every iteration
             IExpression condition = null;
-            if (Check(TokenType.SEMICOLON))
+            if (Check(TokenType.SEMICOLON) == false)
             {
                 condition = Expression();
             }
@@ -172,6 +178,19 @@ namespace min
             return new PrintStatement(value);
         }
 
+        private IStatement ReturnStatement()
+        {
+            Token keyword = Previous();
+            IExpression value = null;
+            if (Check(TokenType.SEMICOLON) == false)
+            {
+                value = Expression();
+            }
+
+            Consume(TokenType.SEMICOLON, "Expect ';' after return value.");
+            return new ReturnStatement(keyword, value);
+        }
+
         /// <summary>
         /// Get a while statament.
         /// </summary>
@@ -194,6 +213,36 @@ namespace min
 
             Consume(TokenType.SEMICOLON, "Expect ';' after value.");
             return new ExpressionStatement(expression);
+        }
+
+        /// <summary>
+        /// Get a function (or class) statement.
+        /// </summary>
+        /// <param name="kind">What kind of statement this is (ie. function)</param>
+        private IStatement FunctionStatement(string kind)
+        {
+            Token name = Consume(TokenType.IDENTIFIER, $"Expect {kind} name.");
+            Consume(TokenType.LEFT_PAREN, $"Expect '(' after {kind} name.");
+
+            List<Token> parameters = new List<Token>();
+            if (Check(TokenType.RIGHT_PAREN) == false)
+            {
+                do
+                {
+                    if (parameters.Count >= 8)
+                    {
+                        Error(Peek(), "Cannot have more than 8 parameters.");
+                    }
+
+                    parameters.Add(Consume(TokenType.IDENTIFIER, "Expect parameter name."));
+                } while (Match(TokenType.COMMA));
+            }
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.");
+
+            Consume(TokenType.LEFT_BRACE, $"Expect '{{' before {kind} body.");
+            List<IStatement> body = BlockStatement();
+
+            return new FunctionStatement(name, parameters, body);
         }
 
         /// <summary>
@@ -244,7 +293,9 @@ namespace min
             expression → literal | unary | binary | grouping | ternary ;
             literal    → NUMBER | STRING | "false" | "true" | "null" | IDENTIFIER ;
             grouping   → "(" expression ")" ;
-            unary      → ( "-" | "!" ) expression ;
+            unary      → ( "-" | "!" ) expression | call ;
+            call       → primary ( "(" arguments? ")" )* ;
+            arguments  → expression ( "," expression )* ;
             binary     → expression operator expression ;
             operator   → "==" | "!=" | "<" | "<=" | ">" | ">=" | "+"  | "-"  | "*" | "/" ;
             ternary    → condition "?" thenExpression ":" elseExpression ;
@@ -432,7 +483,60 @@ namespace min
                 return new UnaryExpression(op, right);
             }
 
-            return Primary();
+            return Call();
+        }
+
+        private IExpression Call()
+        {
+            // Get callee
+            IExpression expression = Primary();
+
+            // Loop multiple times to allow for fn()()()
+            while (true)
+            {
+                if (Match(TokenType.LEFT_PAREN))
+                {
+                    expression = FinishCall(expression);
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return expression;
+        }
+
+        /// <summary>
+        /// Get a CallExpression once a callee has been matched.
+        /// </summary>
+        /// <param name="callee">The callee (ie. function name)</param>
+        private IExpression FinishCall(IExpression callee)
+        {
+            List<IExpression> arguments = new List<IExpression>();
+
+            // If there are arguments
+            if (Check(TokenType.RIGHT_PAREN) == false)
+            {
+                // Loop to get every argument
+                do
+                {
+                    // At this point, just use an object to pass data
+                    if (arguments.Count >= 8)
+                    {
+                        // Don't throw because we know where we are (no panic mode)
+                        Error(Peek(), "Function calls cannot have more than 8 arguments.");
+                    }
+
+                    // Match any expression after a Comma()
+                    // Comma() has been implemented as a Binary(left , "," , right), so we need to skip over it for function calls
+                    arguments.Add(Assignment());
+                } while (Match(TokenType.COMMA));
+            }
+
+            Token paren = Consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.");
+
+            return new CallExpression(callee, paren, arguments);
         }
 
         /// <summary>

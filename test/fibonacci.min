@@ -1,9 +1,8 @@
-let a = 0;
-let b = 1;
+function fibonacci(n) {
+  if (n <= 1) return n;
+  return fibonacci(n - 2) + fibonacci(n - 1);
+}
 
-while (a < 10000) {
-  print a;
-  let temp = a;
-  a = b;
-  b = temp + b;
+for (let i = 0; i < 20; i = i + 1) {
+  print fibonacci(i);
 }

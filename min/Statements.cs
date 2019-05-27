@@ -10,8 +10,10 @@ namespace min
     public interface IStatementVisitor<T>
     {
         T VisitExpressionStatement(ExpressionStatement statement);
+        T VisitFunctionStatement(FunctionStatement statement);
         T VisitIfStatement(IfStatement statement);
         T VisitPrintStatement(PrintStatement statement);
+        T VisitReturnStatement(ReturnStatement statement);
         T VisitLetStatement(LetStatement statement);
         T VisitWhileStatement(WhileStatement statement);
         T VisitBlockStatement(BlockStatement statement);
@@ -29,6 +31,25 @@ namespace min
         public T Accept<T>(IStatementVisitor<T> visitor)
         {
             return visitor.VisitExpressionStatement(this);
+        }
+    }
+
+    public struct FunctionStatement : IStatement
+    {
+        public readonly Token name;
+        public readonly List<Token> parameters;
+        public readonly List<IStatement> body;
+
+        public FunctionStatement(Token name, List<Token> parameters, List<IStatement> body)
+        {
+            this.name = name;
+            this.parameters = parameters;
+            this.body = body;
+        }
+
+        public T Accept<T>(IStatementVisitor<T> visitor)
+        {
+            return visitor.VisitFunctionStatement(this);
         }
     }
 
@@ -63,6 +84,23 @@ namespace min
         public T Accept<T>(IStatementVisitor<T> visitor)
         {
             return visitor.VisitPrintStatement(this);
+        }
+    }
+
+    public struct ReturnStatement : IStatement
+    {
+        public readonly Token keyword;
+        public readonly IExpression value;
+
+        public ReturnStatement(Token keyword, IExpression value)
+        {
+            this.keyword = keyword;
+            this.value = value;
+        }
+
+        public T Accept<T>(IStatementVisitor<T> visitor)
+        {
+            return visitor.VisitReturnStatement(this);
         }
     }
 

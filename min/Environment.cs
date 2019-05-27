@@ -30,7 +30,16 @@ namespace min
                 return;
             }
 
-            throw new RuntimeError(name, $"Variable '{name.lexeme}' has already been declared.");
+            throw new RuntimeError(name, $"Identifier '{name.lexeme}' has already been declared.");
+        }
+
+        /// <summary>
+        /// NOTE: ONLY USE IN NATIVE LIBRARY
+        /// </summary>
+        public void Define(string name, object value)
+        {
+            Token token = new Token(TokenType.NULL, name, null, 0);
+            Define(token, value);
         }
 
         public object Get(Token name)

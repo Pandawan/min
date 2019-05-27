@@ -1,5 +1,7 @@
 using System;
 using System.Text;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace min.Debug
 {
@@ -14,6 +16,14 @@ namespace min.Debug
         public string VisitBinaryExpression(BinaryExpression expression)
         {
             return Parenthesize(expression.op.lexeme, expression.left, expression.right);
+        }
+
+        public string VisitCallExpression(CallExpression expression)
+        {
+            List<IExpression> expressions = new List<IExpression>();
+            expressions.Add(expression.callee);
+            expressions.AddRange(expression.arguments);
+            return Parenthesize("call", expressions.ToArray());
         }
 
         public string VisitGroupingExpression(GroupingExpression expression)

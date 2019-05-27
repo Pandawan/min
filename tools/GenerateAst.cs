@@ -25,6 +25,7 @@ namespace tools
 
                 DefineAst(outputDir, "Expression", new List<string>() {
                     "BinaryExpression   : IExpression left, Token op, IExpression right",
+                    "CallExpression     : IExpression callee, Token paren, List<IExpression> arguments",
                     "GroupingExpression : IExpression expression",
                     "LiteralExpression  : object value",
                     "LogicalExpression  : IExpression left, Token op, IExpression right",
@@ -40,8 +41,10 @@ namespace tools
             {
                 DefineAst(outputDir, "Statement", new List<string>() {
                     "ExpressionStatement : IExpression expression",
+                    "FunctionStatement   : Token name, List<Token> parameters, List<IStatement> body",
                     "IfStatement         : IExpression condition, IStatement thenBranch, IStatement elseBranch",
                     "PrintStatement      : IExpression expression",
+                    "ReturnStatement     : Token keyword, IExpression value",
                     "LetStatement        : Token name, IExpression initializer",
                     "WhileStatement      : IExpression condition, IStatement body",
                     "BlockStatement      : List<IStatement> statements",
@@ -60,7 +63,7 @@ namespace tools
         {
             using (StreamWriter outputFile = new StreamWriter(Path.Combine(outputDir, $"{baseName}s.cs")))
             {
-                if (baseName == "Statement") outputFile.WriteLine("using System.Collections.Generic;\n");
+                outputFile.WriteLine("using System.Collections.Generic;\n");
 
                 outputFile.WriteLine($"namespace min");
                 outputFile.WriteLine("{");

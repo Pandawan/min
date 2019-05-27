@@ -36,3 +36,5 @@ Alongside the features supported in Crafting Interpreters, I've added
 - Add a `Min.version` as part of the Min library/object (kind of meta object)
 - Add nested block comment support `/* /* */ */`
 - Add comparison support for strings `5 < "hey"`
+- Add `break`, `continue`
+- Add lambda functions `() => {}` or anonymous functions `function () {}`

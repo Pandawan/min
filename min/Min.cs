@@ -47,7 +47,15 @@ namespace min
             while (true)
             {
                 Console.Write("> ");
-                Run(Console.ReadLine(), true);
+                string input = Console.ReadLine();
+
+                // Exit ends the program
+                if (input.Trim() == "exit")
+                {
+                    return;
+                }
+
+                Run(input, true);
 
                 // If there was an error, don't crash the entire program
                 hadError = false;
